@@ -589,7 +589,7 @@
         // Cargar datos del CSV
         async function loadCSVData() {
             try {
-                const response = await window.fs.readFile('coincidencias_con_coordenadas.csv', { encoding: 'utf8' });
+                const response = await window.fs.readFile('bdtpbv.csv', { encoding: 'utf8' });
                 csvData = parseCSV(response);
                 populateFilters();
                 console.log('Datos cargados:', csvData.length, 'registros');
