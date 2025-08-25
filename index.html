@@ -246,40 +246,85 @@
             gap: 10px;
         }
 
-        .info-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
+        .info-tags-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .tag-category h4 {
+            color: var(--color-primary);
+            margin-bottom: 12px;
+            font-size: 1.15rem;
+            font-weight: var(--font-weight-bold);
+            border-bottom: 2px solid var(--color-light-gray);
+            padding-bottom: 8px;
         }
         
-        .info-table th {
+        .tag-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .info-tag {
+            background-color: var(--color-primary-10);
+            border: 1px solid var(--color-primary-40);
+            color: var(--color-dark-green);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .info-tag:hover {
             background-color: var(--color-primary);
             color: white;
-            padding: 12px 15px;
-            text-align: left;
-            font-size: 1.1rem;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px var(--color-primary-40);
+        }
+
+        .info-tag strong {
             font-weight: var(--font-weight-semibold);
+            margin-right: 6px;
         }
 
-        .info-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--color-light-gray);
-            font-size: 0.95rem;
-        }
-
-        .info-table tr:nth-child(even) {
-            background-color: var(--color-primary-10);
-        }
-
-        .info-table td:first-child {
-            font-weight: var(--font-weight-medium);
-            color: var(--color-dark-green);
-        }
-        
-        .info-table td:last-child {
+        .info-tag span {
             font-weight: var(--font-weight-bold);
-            color: var(--color-primary);
-            text-align: right;
+        }
+
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 30px;
+        }
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 40px rgba(46, 59, 43, 0.15);
+            border: 2px solid var(--color-primary-20);
+            transition: all 0.3s ease;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(46, 59, 43, 0.2);
+        }
+
+        .chart-card h4 {
+            color: var(--color-dark-green);
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 320px;
         }
 
         .loading {
@@ -322,6 +367,10 @@
             .controls {
                 grid-template-columns: 1fr;
                 padding: 20px;
+            }
+            
+            .charts-container {
+                grid-template-columns: 1fr;
             }
             
             .header h1 {
@@ -502,19 +551,23 @@
         </div>
 
         <div class="controls">
-            <!-- NEW municipality flow: Municipality selector -->
             <div class="form-group">
-                <label for="municipio-select">📍 Filtrar por Municipio:</label>
-                <select id="municipio-select" disabled>
-                    <option value="">Cargando municipios...</option>
+                <label for="poligono-select">🗺️ Filtrar por Polígono:</label>
+                <select id="poligono-select">
+                    <option value="">Seleccione un polígono</option>
                 </select>
             </div>
             
             <div class="form-group">
                 <label for="localidad-select">📍 Filtrar por Localidad:</label>
                 <select id="localidad-select" disabled>
-                    <option value="">Primero seleccione un municipio</option>
+                    <option value="">Primero seleccione un polígono</option>
                 </select>
+            </div>
+
+            <div class="form-group">
+                <label for="municipio-filter">🔍 Buscar por Municipio:</label>
+                <input type="text" id="municipio-filter" placeholder="Escriba el nombre del municipio">
             </div>
             
             <button class="btn" onclick="clearFilters()">🔄 Limpiar Filtros</button>
@@ -530,12 +583,41 @@
                 <h3>📊 Información Sociodemográfica</h3>
                 <div id="info-content">
                     <div class="alert info">
-                        Seleccione un municipio y localidad para ver los datos sociodemográficos detallados.
+                        Seleccione un polígono y localidad para ver los datos sociodemográficos detallados del Estado de Morelos.
                     </div>
                 </div>
             </div>
         </div>
 
+        <div class="charts-container" id="charts-container" style="display: none;">
+            <div class="chart-card">
+                <h4>👥 Distribución de Población</h4>
+                <div class="chart-container">
+                    <canvas id="populationChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h4>🎓 Nivel Educativo</h4>
+                <div class="chart-container">
+                    <canvas id="educationChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h4>🏥 Servicios de Salud</h4>
+                <div class="chart-container">
+                    <canvas id="healthChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h4>🏠 Características de Vivienda</h4>
+                <div class="chart-container">
+                    <canvas id="housingChart"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
     
     <!-- Modal for Gemini Analysis -->
@@ -584,7 +666,7 @@
         // Inicializar aplicación
         document.addEventListener('DOMContentLoaded', function() {
             initMap();
-            loadGeoJSONLayer();
+            loadGeoJSONLayer(); // Cargar la nueva capa de polígonos
             loadCSVData();
             setupEventListeners();
         });
@@ -598,7 +680,7 @@
                 }
                 const csvText = await response.text();
                 csvData = parseCSV(csvText);
-                populateFilters(); // NEW municipality flow: This now populates municipalities
+                populateFilters();
                 console.log('Datos cargados:', csvData.length, 'registros');
             } catch (error) {
                 console.error('Error cargando datos:', error);
@@ -628,19 +710,17 @@
             return data;
         }
 
-        // NEW municipality flow: Populate the municipality filter
+        // Poblar filtros
         function populateFilters() {
-            const municipioSelect = document.getElementById('municipio-select');
-            municipioSelect.innerHTML = '<option value="">Seleccione un municipio</option>';
-            const municipios = [...new Set(csvData.map(item => item.NOM_MUN))].filter(m => m).sort();
+            const poligonoSelect = document.getElementById('poligono-select');
+            const poligonos = [...new Set(csvData.map(item => item.Poligono))].filter(p => p).sort((a, b) => parseInt(a) - parseInt(b));
             
-            municipios.forEach(municipio => {
+            poligonos.forEach(poligono => {
                 const option = document.createElement('option');
-                option.value = municipio;
-                option.textContent = municipio;
-                municipioSelect.appendChild(option);
+                option.value = poligono;
+                option.textContent = `Polígono ${poligono}`;
+                poligonoSelect.appendChild(option);
             });
-            municipioSelect.disabled = false;
         }
 
         // Inicializar mapa con selector de vista y capas
@@ -665,7 +745,7 @@
             });
 
             markersLayer = L.layerGroup().addTo(map);
-            poligonosTPBVLayer = L.layerGroup();
+            poligonosTPBVLayer = L.layerGroup(); // No añadir al mapa por defecto, se controla con el control de capas
 
             const overlayMaps = {
                 "Marcadores de Localidad": markersLayer,
@@ -715,18 +795,17 @@
             }
         }
 
-        // NEW municipality flow: Updated event listeners
+        // Configurar event listeners
         function setupEventListeners() {
-            const municipioSelect = document.getElementById('municipio-select');
+            const poligonoSelect = document.getElementById('poligono-select');
             const localidadSelect = document.getElementById('localidad-select');
+            const municipioFilter = document.getElementById('municipio-filter');
             const ttsButton = document.getElementById('tts-button');
 
-            municipioSelect.addEventListener('change', function() {
-                updateLocalidadFilterByMunicipio();
+            poligonoSelect.addEventListener('change', function() {
+                updateLocalidadFilter();
                 if (this.value) {
-                    const filteredData = csvData.filter(item => item.NOM_MUN === this.value);
-                    updateMap(filteredData);
-                    clearInfo();
+                    filterByPoligono(this.value);
                 } else {
                     clearMap();
                     clearInfo();
@@ -738,20 +817,24 @@
                     showLocalidadData(this.value);
                 }
             });
+
+            municipioFilter.addEventListener('input', function() {
+                filterByMunicipio(this.value);
+            });
             
             ttsButton.addEventListener('click', handleTTSClick);
         }
         
-        // NEW municipality flow: New function to update localities based on municipality
-        function updateLocalidadFilterByMunicipio() {
-            const municipioSelect = document.getElementById('municipio-select');
+        // Actualizar filtro de localidades
+        function updateLocalidadFilter() {
+            const poligonoSelect = document.getElementById('poligono-select');
             const localidadSelect = document.getElementById('localidad-select');
             
             localidadSelect.innerHTML = '<option value="">Seleccione una localidad</option>';
             
-            if (municipioSelect.value) {
+            if (poligonoSelect.value) {
                 const localidades = csvData
-                    .filter(item => item.NOM_MUN === municipioSelect.value && item.NOMGEO)
+                    .filter(item => item.Poligono === poligonoSelect.value && item.NOMGEO)
                     .map(item => ({ code: item.LOC, name: item.NOMGEO }))
                     .filter((item, index, self) => index === self.findIndex(t => t.code === item.code));
                 
@@ -768,17 +851,37 @@
             }
         }
 
-        // NEW municipality flow: Updated to search by LOC within the selected municipality
+        // Filtrar por polígono
+        function filterByPoligono(poligono) {
+            const filteredData = csvData.filter(item => item.Poligono === poligono);
+            updateMap(filteredData);
+            clearInfo();
+        }
+
+        // Filtrar por municipio
+        function filterByMunicipio(municipio) {
+            if (municipio.length > 2) {
+                const filteredData = csvData.filter(item => 
+                    item.NOM_MUN && item.NOM_MUN.toLowerCase().includes(municipio.toLowerCase())
+                );
+                updateMap(filteredData);
+            } else if (municipio.length === 0) {
+                clearFilters();
+            }
+        }
+
+        // Mostrar datos de localidad
         function showLocalidadData(localidadCode) {
-            const municipioSelect = document.getElementById('municipio-select');
+            const poligonoSelect = document.getElementById('poligono-select');
             const localidadData = csvData.find(item => 
-                item.NOM_MUN === municipioSelect.value && item.LOC === localidadCode
+                item.Poligono === poligonoSelect.value && item.LOC === localidadCode
             );
             
             if (localidadData) {
-                currentLocalidadData = localidadData;
+                currentLocalidadData = localidadData; // Guardar datos actuales
                 updateMap([localidadData]);
                 displayDetailedInfo(localidadData);
+                createCharts(localidadData);
             }
         }
 
@@ -809,8 +912,9 @@
                                 <h4 style="color: ${GOVERNMENT_COLORS.darkGreen}; margin-bottom: 12px; font-weight: 700; font-size: 1.1rem;">${item.NOMGEO || 'Sin nombre'}</h4>
                                 <div style="text-align: left;">
                                     <p style="margin: 8px 0; color: ${GOVERNMENT_COLORS.primary}; font-weight: 600;"><strong>🏛️ Municipio:</strong> ${item.NOM_MUN}</p>
+                                    <p style="margin: 8px 0; color: ${GOVERNMENT_COLORS.primary}; font-weight: 600;"><strong>🗺️ Polígono:</strong> ${item.Poligono}</p>
                                     <p style="margin: 8px 0; color: ${GOVERNMENT_COLORS.primary}; font-weight: 600;"><strong>👥 Población Total:</strong> ${item.POB1 || 'N/D'}</p>
-                                    <p style="margin: 8px 0; color: ${GOVERNMENT_COLORS.secondary}; font-weight: 500; font-size: 0.9rem;"><em>Índice de Marginación: ${item.IMN_2020_y || 'N/D'}</em></p>
+                                    <p style="margin: 8px 0; color: ${GOVERNMENT_COLORS.secondary}; font-weight: 500; font-size: 0.9rem;"><em>Grado de Marginación: ${item.GM_2020_y || 'N/D'}</em></p>
                                 </div>
                             </div>
                         `);
@@ -836,19 +940,16 @@
             currentLocalidadData = null;
             document.getElementById('info-content').innerHTML = 
                 `<div class="alert info">
-                    Seleccione un municipio y localidad para ver los datos sociodemográficos detallados.
+                    Seleccione un polígono y localidad para ver los datos sociodemográficos detallados.
                 </div>`;
+            document.getElementById('charts-container').style.display = 'none';
         }
         
-        // NEW municipality flow: Updated clearFilters
         function clearFilters() {
-            const municipioSelect = document.getElementById('municipio-select');
-            const localidadSelect = document.getElementById('localidad-select');
-            
-            municipioSelect.value = '';
-            localidadSelect.innerHTML = '<option value="">Primero seleccione un municipio</option>';
-            localidadSelect.disabled = true;
-            
+            document.getElementById('poligono-select').value = '';
+            document.getElementById('localidad-select').innerHTML = '<option value="">Primero seleccione un polígono</option>';
+            document.getElementById('localidad-select').disabled = true;
+            document.getElementById('municipio-filter').value = '';
             clearMap();
             clearInfo();
         }
@@ -866,47 +967,148 @@
                     'Población de mujeres': data.POB42,
                     'Población de hombres': data.POB84,
                 },
+                'Educación': {
+                    'Asistencia escolar (3-5 años)': `${data.EDU1_R || 0}%`,
+                    'Asistencia escolar (6-11 años)': `${data.EDU7_R || 0}%`,
+                    'Asistencia escolar (12-14 años)': `${data.EDU13_R || 0}%`,
+                    'Analfabetismo (>15 años)': data.EDU28,
+                    'Con educación básica (>15 años)': data.EDU34,
+                    'Grado promedio escolaridad': data.EDU49_R,
+                },
+                'Economía': {
+                    'Pob. económicamente activa': data.ECO1,
+                    'Pob. ocupada': data.ECO4,
+                    'Pob. ocupada sin escolaridad': data.ECO7,
+                    'Pob. ocupada con sec. incompleta': data.ECO13,
+                    'Pob. económicamente no activa': data.ECO28,
+                },
+                'Grupos Específicos': {
+                    'Pob. afromexicana': data.AFRO1,
+                    'Pob. con discapacidad (0-14 años)': data.DISC4,
+                    'Pob. con discapacidad (15-59 años)': data.DISC5,
+                    'Pob. con discapacidad (>60 años)': data.DISC6,
+                },
+                'Servicios de Salud': {
+                    'Afiliada a servicios de salud': data.SALUD1,
+                    'Sin afiliación': data.SALUD2,
+                    'Afiliada al IMSS': data.SALUD3,
+                    'Afiliada al ISSSTE': data.SALUD4,
+                    'Afiliada a Pemex, Defensa o Marina': data.SALUD6,
+                },
                 'Vivienda (Características)': {
                     'Total de viviendas': data.VIV0,
                     'Particulares habitadas': data.VIV2,
                     'Con piso de tierra': data.VIV7,
                     'Con hacinamiento': data.VIV10,
+                },
+                'Vivienda (Bienes)': {
+                    'Con refrigerador': data.VIV27,
+                    'Con lavadora': data.VIV28,
+                    'Con automóvil o camioneta': data.VIV29,
+                    'Con bicicleta': data.VIV81,
+                },
+                'Vivienda (Servicios)': {
+                    'Con energía eléctrica': data.VIV15,
+                    'Con agua entubada': data.VIV17,
+                    'Con servicio sanitario': data.VIV20,
+                    'Con drenaje': data.VIV22,
+                },
+                'Vivienda (TIC)': {
+                    'Con computadora/laptop/tablet': data.VIV34,
+                    'Con línea telefónica fija': data.VIV35,
+                    'Con teléfono celular': data.VIV36,
                 }
             };
 
-            let html = '';
+            let html = '<div class="info-tags-container">';
             for (const category in infoMapping) {
                 html += `
-                    <table class="info-table">
-                        <thead>
-                            <tr>
-                                <th colspan="2">${category}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <div class="tag-category">
+                        <h4>${category}</h4>
+                        <div class="tag-group">
                 `;
                 for (const [label, value] of Object.entries(infoMapping[category])) {
                     html += `
-                        <tr>
-                            <td>${label}</td>
-                            <td>${value !== undefined && value !== null ? value : 'N/D'}</td>
-                        </tr>
+                        <div class="info-tag">
+                            <strong>${label}:</strong> <span>${value !== undefined && value !== null ? value : 'N/D'}</span>
+                        </div>
                     `;
                 }
                 html += `
-                        </tbody>
-                    </table>
+                        </div>
+                    </div>
                 `;
             }
+            html += '</div>';
 
             html += `
                 <div class="alert success" style="margin-top: 20px;">
-                    <strong>Índice de Marginación (2020):</strong> ${data.IMN_2020_y || 'N/D'}
+                    <strong>Grado de Marginación (2020):</strong> ${data.GM_2020_y || 'N/D'}
                 </div>
                 <button class="btn btn-gemini" onclick="handleAnalysisClick()">✨ Analizar Datos con IA</button>
             `;
 
             infoContent.innerHTML = html;
+        }
+
+        function createCharts(data) {
+            document.getElementById('charts-container').style.display = 'grid';
+            Object.values(charts).forEach(chart => chart.destroy());
+
+            charts.population = new Chart(document.getElementById('populationChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Hombres', 'Mujeres'],
+                    datasets: [{
+                        label: 'Población',
+                        data: [data.POB42 || 0, data.POB84 || 0],
+                        backgroundColor: [GOVERNMENT_COLORS.primary, GOVERNMENT_COLORS.secondary],
+                        borderColor: '#fff', borderWidth: 2
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            charts.education = new Chart(document.getElementById('educationChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Pob. >15 analfabeta', 'Pob. >6 sin primaria'],
+                    datasets: [{
+                        label: '% de la población',
+                        data: [data.EDU1_R || 0, data.EDU7_R || 0],
+                        backgroundColor: [GOVERNMENT_COLORS.purple, GOVERNMENT_COLORS.brown],
+                        borderRadius: 5
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
+            });
+            
+            charts.health = new Chart(document.getElementById('healthChart').getContext('2d'), {
+                type: 'polarArea',
+                data: {
+                    labels: ['Con Servicios', 'Sin Servicios'],
+                    datasets: [{
+                        data: [(parseInt(data.POB1 || 0) - parseInt(data.SALUD1 || 0)), parseInt(data.SALUD1 || 0)],
+                        backgroundColor: [GOVERNMENT_COLORS.primaryRGB + ', 0.7)', GOVERNMENT_COLORS.purpleRGB + ', 0.7)'],
+                        borderColor: '#fff'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            charts.housing = new Chart(document.getElementById('housingChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Sin Drenaje', 'Sin Luz', 'Piso Tierra'],
+                    datasets: [{
+                        label: 'Número de Viviendas',
+                        data: [data.VIV7 || 0, data.VIV10 || 0, data.VIV27 || 0],
+                        backgroundColor: [GOVERNMENT_COLORS.secondary, GOVERNMENT_COLORS.darkGreen, GOVERNMENT_COLORS.brown],
+                        borderRadius: 5
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
         }
         
         // --- Gemini API Integration ---
@@ -941,10 +1143,10 @@
                 viviendas_sin_drenaje: currentLocalidadData.VIV7,
                 viviendas_sin_electricidad: currentLocalidadData.VIV10,
                 viviendas_con_piso_tierra: currentLocalidadData.VIV27,
-                indice_marginacion: currentLocalidadData.IMN_2020_y
+                grado_marginacion: currentLocalidadData.GM_2020_y
             };
 
-            const prompt = `Actúa como un analista sociodemográfico experto para el estado de Morelos, México. Basado en los siguientes datos JSON de la localidad de ${dataToAnalyze.nombre}, proporciona un resumen conciso (máximo 150 palabras) destacando los puntos más importantes sobre población y vivienda. Luego, en una sección separada con el título "Áreas de Enfoque", sugiere 2 áreas prioritarias para políticas públicas basadas en estos datos. Formatea tu respuesta en Markdown. Datos: ${JSON.stringify(dataToAnalyze)}`;
+            const prompt = `Actúa como un analista sociodemográfico experto para el estado de Morelos, México. Basado en los siguientes datos JSON de la localidad de ${dataToAnalyze.nombre}, proporciona un resumen conciso (máximo 150 palabras) destacando los puntos más importantes sobre población, educación, salud y vivienda. Luego, en una sección separada con el título "Áreas de Enfoque", sugiere 2 áreas prioritarias para políticas públicas basadas en estos datos. Formatea tu respuesta en Markdown. Datos: ${JSON.stringify(dataToAnalyze)}`;
             
             try {
                 let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
